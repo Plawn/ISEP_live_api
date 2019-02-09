@@ -3,9 +3,11 @@ import time
 import queue
 import sys
 
+
 def console_write(string):
     sys.stdout.write(string)
     sys.stdout.flush()
+
 
 class Download_worker(threading.Thread):
     def __init__(self, queue, folder, pool):
@@ -19,11 +21,13 @@ class Download_worker(threading.Thread):
         while not self.stopped:
             d = None
             try:
-                d = self.queue.get(block=False)
-                d.set_download_folder(self.download_folder)
+                d, already_set = self.queue.get(block=False)
+                if not already_set :
+                    d.set_download_folder(self.download_folder)
             except:
                 return
             try:
+                # print('trying {}'.format(d))
                 d.download()
                 self.pool.notify()
             except:
@@ -39,7 +43,7 @@ class Download_worker(threading.Thread):
 
 
 class Download_pool(threading.Thread):
-    def __init__(self, nb_workers, folder):
+    def __init__(self, nb_workers, folder=''):
         threading.Thread.__init__(self)
         self.queue = queue.Queue()
         self.workers = []
@@ -56,11 +60,11 @@ class Download_pool(threading.Thread):
     def add_workder(self):
         self.workers.append(Download_worker(self.queue, self.folder, self))
 
-    def add(self, url):
+    def add(self, url, already_set=False):
         with self.lock:
             self.to_do += 1
             self.remaining += 1
-            self.queue.put(url)
+            self.queue.put((url, already_set))
 
     def notify(self):
         with self.lock:

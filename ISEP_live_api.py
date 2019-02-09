@@ -55,3 +55,13 @@ class ISEP_live_account:
             ids += list(map(lambda x: x['id'], self.get_json(
                 'https://iseplive.fr/api/media?page={}'.format(r))['content']))
         return ids
+
+    def load_annuaire(self):
+        res = self.get_json('https://iseplive.fr/api/user/student/search?name=&promos=&sort=a&page=0')
+        nb_pages = res['totalPages']
+        students = []
+        for i in range(nb_pages):
+            res = self.get_json('https://iseplive.fr/api/user/student/search?name=&promos=&sort=a&page={}'.format(i))
+            students += res['content']
+            print(i, '/', nb_pages)
+        return students
